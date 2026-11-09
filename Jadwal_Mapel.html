@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Mengajar - SMKS YAPIS TIK MIMIKA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf.js for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- SheetJS XLSX for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        yapis: {
+                            green: '#0B7A42',
+                            lightgreen: '#10B981',
+                            darkgreen: '#064E2B',
+                            gold: '#EAB308',
+                            lightgold: '#FEF08A'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F3F4F6;
+        }
+        /* Style khusus pencetakan/PDF */
+        .pdf-print-area {
+            background-color: white !important;
+            color: black !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-gray-800">
+
+    <!-- HEADER / NAVBAR -->
+    <header class="bg-yapis-green text-white shadow-lg border-b-4 border-yapis-gold sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <!-- Logo dan Judul Sekolah -->
+            <div class="flex items-center gap-4 w-full sm:w-auto justify-start">
+                <div class="bg-white p-1.5 rounded-full shadow-md flex-shrink-0 flex items-center justify-center border-2 border-yapis-gold">
+                   
+                    <center><img src="https://i.imgur.com/HE1qKPF.png" alt="Girl in a jacket" width="60" height="60"></center>
+                  
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        SMKS YAPIS TIK MIMIKA
+                    </h1>
+                    <p class="text-xs sm:text-sm text-yapis-lightgold font-medium">Aplikasi Manajemen Jadwal Mengajar Guru</p>
+                </div>
+            </div>
+
+            <!-- Header Quick Actions -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="openModal()" class="w-full sm:w-auto bg-yapis-gold hover:bg-yellow-500 text-gray-900 font-semibold px-4 py-2 rounded-lg shadow-md transition flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> Tambah Jadwal
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER UTAMA -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- STATS & INFO BAR -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yapis-green flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium">Total Sesi Mengajar</p>
+                    <h3 id="statTotal" class="text-2xl font-bold text-gray-800">0</h3>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full text-yapis-green">
+                    <i class="fa-solid fa-calendar-days text-xl"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium">Total Guru</p>
+                    <h3 id="statGuru" class="text-2xl font-bold text-gray-800">0</h3>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-full text-blue-600">
+                    <i class="fa-solid fa-chalkboard-user text-xl"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yapis-gold flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium">Total Kelas</p>
+                    <h3 id="statKelas" class="text-2xl font-bold text-gray-800">0</h3>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-full text-yapis-gold">
+                    <i class="fa-solid fa-school text-xl"></i>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium">Mata Pelajaran</p>
+                    <h3 id="statMapel" class="text-2xl font-bold text-gray-800">0</h3>
+                </div>
+                <div class="bg-purple-100 p-3 rounded-full text-purple-600">
+                    <i class="fa-solid fa-book-open text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- BAR KONTROL: SEARCH, FILTER, DAN EXPORT -->
+        <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+
+                <!-- Search & Filters -->
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto flex-grow">
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Cari Guru / Mapel / Ruang..." class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none">
+                    </div>
+
+                    <!-- Filter Hari -->
+                    <div class="w-full sm:w-44">
+                        <select id="filterHari" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none bg-white">
+                            <option value="">-- Semua Hari --</option>
+                            <option value="Senin">Senin</option>
+                            <option value="Selasa">Selasa</option>
+                            <option value="Rabu">Rabu</option>
+                            <option value="Kamis">Kamis</option>
+                            <option value="Jumat">Jumat</option>
+                            <option value="Sabtu">Sabtu</option>
+                        </select>
+                    </div>
+
+                    <!-- Filter Kelas -->
+                    <div class="w-full sm:w-44">
+                        <select id="filterKelas" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none bg-white">
+                            <option value="">-- Semua Kelas --</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset Filter Button -->
+                    <button onclick="resetFilters()" title="Reset Filter" class="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-600 transition">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+
+                <!-- Action Buttons: PDF & EXCEL Export -->
+                <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
+                    <button onclick="exportToPDF()" class="flex-1 sm:flex-initial bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg shadow transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-file-pdf"></i> Save PDF
+                    </button>
+                    <button onclick="exportToExcel()" class="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg shadow transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-file-excel"></i> Save Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLE SECTION -->
+        <div id="printArea" class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+            <!-- Header khusus Cetak PDF (Hanya Muncul di Ekspor) -->
+            <div id="pdfHeader" class="hidden p-6 text-center border-b border-gray-300 bg-white">
+                <div class="flex items-center justify-center gap-4 mb-2">
+                    <div class="w-16 h-16 bg-yapis-green rounded-full flex items-center justify-center text-white font-bold text-xl border-2 border-yapis-gold">
+                      
+                    <center><img src="https://i.imgur.com/HXscxKK.png" alt="Girl in a jacket" width="70" height="70"></center>
+
+
+                    </div>
+                    <div class="text-left">
+                        <h2 class="text-xl font-bold text-gray-900 tracking-wide">SMKS YAPIS TIK MIMIKA</h2>
+                        <p class="text-xs text-gray-600">Alamat: Jl.Megantara No.12 Timika, Papua Tengah</p>
+                        <p class="text-xs text-gray-600">JADWAL MENGAJAR GURU - TAHUN AJARAN 2026/2027</p>
+                    </div>
+                </div>
+                <hr class="border-yapis-green my-2 border-2">
+            </div>
+
+            <!-- Tabel Data -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-yapis-green text-white font-semibold uppercase text-xs tracking-wider">
+                            <th class="py-3.5 px-4 text-center w-12">No</th>
+                            <th class="py-3.5 px-4">Hari</th>
+                            <th class="py-3.5 px-4">Jam Ke / Waktu</th>
+                            <th class="py-3.5 px-4">Mata Pelajaran</th>
+                            <th class="py-3.5 px-4">Kelas</th>
+                            <th class="py-3.5 px-4">Ruang / Lab</th>
+                            <th class="py-3.5 px-4">Nama Guru</th>
+                            <th class="py-3.5 px-4 text-center no-print w-28">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleTableBody" class="divide-y divide-gray-200 text-gray-700">
+                        <!-- Content populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden py-12 text-center text-gray-500">
+                <i class="fa-regular fa-folder-open text-4xl mb-3 text-gray-300"></i>
+                <p class="text-base font-medium">Belum ada data jadwal mengajar</p>
+                <p class="text-xs text-gray-400 mt-1">Klik tombol "+ Tambah Jadwal" untuk membuat data baru.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-gray-800 text-gray-300 py-4 text-center text-xs mt-8">
+        <p>&copy; 2026 SMKS YAPIS TIK MIMIKA. All rights reserved.</p>
+    </footer>
+
+    <!-- MODAL FORM (TAMBAH / EDIT JADWAL) -->
+    <div id="modalForm" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            
+            <!-- Modal Header -->
+            <div class="bg-yapis-green text-white px-6 py-4 flex items-center justify-between border-b-2 border-yapis-gold">
+                <h3 id="modalTitle" class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-plus"></i> Tambah Jadwal Mengajar
+                </h3>
+                <button onclick="closeModal()" class="text-white hover:text-yapis-gold text-xl focus:outline-none">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form Body -->
+            <form id="scheduleForm" onsubmit="saveSchedule(event)" class="p-6 space-y-4">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Hari -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Hari <span class="text-red-500">*</span></label>
+                        <select id="formHari" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none">
+                            <option value="">-- Pilih Hari --</option>
+                            <option value="Senin">Senin</option>
+                            <option value="Selasa">Selasa</option>
+                            <option value="Rabu">Rabu</option>
+                            <option value="Kamis">Kamis</option>
+                            <option value="Jumat">Jumat</option>
+                            <option value="Sabtu">Sabtu</option>
+                        </select>
+                    </div>
+
+                    <!-- Jam / Waktu -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Jam Ke / Waktu <span class="text-red-500">*</span></label>
+                        <input type="text" id="formWaktu" placeholder="Contoh: Jam 1-2 (07.30 - 09.00)" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none">
+                    </div>
+                </div>
+
+                <!-- Mata Pelajaran -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Mata Pelajaran <span class="text-red-500">*</span></label>
+                    <input type="text" id="formMapel" placeholder="Contoh: Pemrograman Web & Perangkat Bergerak" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Kelas -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Kelas <span class="text-red-500">*</span></label>
+                        <input type="text" id="formKelas" placeholder="Contoh: XII RPL 1" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none">
+                    </div>
+
+                    <!-- Ruang / Lab -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Ruang / Lab <span class="text-red-500">*</span></label>
+                        <input type="text" id="formRuang" placeholder="Contoh: Lab Komputer 2" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none">
+                    </div>
+                </div>
+
+                <!-- Nama Guru -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Guru <span class="text-red-500">*</span></label>
+                    <input type="text" id="formGuru" placeholder="Contoh: Ahmad Fauzi, S.Kom." required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yapis-green focus:border-yapis-green outline-none">
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-200">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-100 font-medium transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-yapis-green hover:bg-yapis-darkgreen text-white font-semibold rounded-lg shadow text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Simpan Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+        <span id="toastMessage" class="text-sm font-medium">Notifikasi</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Data Sample Bawaan awal (jika LocalStorage masih kosong)
+        const initialSchedules = [
+            { hari: 'Senin', waktu: '07.30 - 09.00 (Jam 1-2)', mapel: 'Pemrograman Web', kelas: 'XII RPL 1', ruang: 'Lab RPL 1', guru: 'Budi Santoso, S.Kom' },
+            { hari: 'Senin', waktu: '09.15 - 11.45 (Jam 3-5)', mapel: 'Basis Data', kelas: 'XI RPL 2', ruang: 'Lab Komputer 2', guru: 'Siti Aminah, M.T' },
+            { hari: 'Selasa', waktu: '07.30 - 09.45 (Jam 1-3)', mapel: 'Jaringan Komputer', kelas: 'X TKJ 1', ruang: 'Lab TKJ', guru: 'Rahmat Hidayat, S.ST' },
+            { hari: 'Rabu', waktu: '10.00 - 12.00 (Jam 4-6)', mapel: 'Desain Grafis', kelas: 'X DKV 2', ruang: 'Lab Multimedia', guru: 'Dewi Lestari, S.Pd' },
+            { hari: 'Kamis', waktu: '08.00 - 10.30 (Jam 2-4)', mapel: 'Administrasi Server', kelas: 'XII TKJ 2', ruang: 'Lab TKJ 2', guru: 'Rahmat Hidayat, S.ST' },
+            { hari: 'Jumat', waktu: '07.30 - 09.30 (Jam 1-2)', mapel: 'Pendidikan Agama Islam', kelas: 'X RPL 1', ruang: 'Ruang 101', guru: 'Ust. Muhammad Ali, S.Ag' }
+        ];
+
+        let schedules = [];
+
+        // Load awal data saat window dimuat
+        window.onload = function() {
+            const savedData = localStorage.getItem('smks_yapis_schedules');
+            if (savedData) {
+                schedules = JSON.parse(savedData);
+            } else {
+                schedules = [...initialSchedules];
+                saveToLocalStorage();
+            }
+            populateClassFilter();
+            renderTable(schedules);
+            updateStats();
+        };
+
+        // Simpan ke LocalStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('smks_yapis_schedules', JSON.stringify(schedules));
+        }
+
+        // Render Data Tabel
+        function renderTable(dataList) {
+            const tbody = document.getElementById('scheduleTableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+
+            if (!dataList || dataList.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            dataList.forEach((item, index) => {
+                // Temukan indeks asli dalam array utama untuk keperluan Edit & Hapus
+                const originalIndex = schedules.findIndex(s => 
+                    s.hari === item.hari && 
+                    s.waktu === item.waktu && 
+                    s.mapel === item.mapel && 
+                    s.kelas === item.kelas && 
+                    s.guru === item.guru
+                );
+                
+                const targetIndex = originalIndex !== -1 ? originalIndex : index;
+
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white hover:bg-gray-50 transition' : 'bg-gray-50/50 hover:bg-gray-100 transition';
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-center font-semibold text-gray-500">${index + 1}</td>
+                    <td class="py-3 px-4 font-semibold text-yapis-green">${item.hari}</td>
+                    <td class="py-3 px-4 text-gray-600">${item.waktu}</td>
+                    <td class="py-3 px-4 font-medium text-gray-900">${item.mapel}</td>
+                    <td class="py-3 px-4">
+                        <span class="inline-block bg-green-100 text-yapis-darkgreen text-xs font-semibold px-2.5 py-1 rounded border border-green-200">
+                            ${item.kelas}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-gray-600">${item.ruang}</td>
+                    <td class="py-3 px-4 font-medium text-gray-800">${item.guru}</td>
+                    <td class="py-3 px-4 text-center no-print">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="editSchedule(${targetIndex})" class="p-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg transition" title="Edit Data">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteSchedule(${targetIndex})" class="p-1.5 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition" title="Hapus Data">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Populasi Dropdown Filter Kelas
+        function populateClassFilter() {
+            const filterKelas = document.getElementById('filterKelas');
+            const uniqueClasses = [...new Set(schedules.map(s => s.kelas))].sort();
+            
+            filterKelas.innerHTML = '<option value="">-- Semua Kelas --</option>';
+            uniqueClasses.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.textContent = cls;
+                filterKelas.appendChild(opt);
+            });
+        }
+
+        // Update Statistik Informasi Ringkas
+        function updateStats() {
+            document.getElementById('statTotal').innerText = schedules.length;
+            
+            const uniqueGuru = new Set(schedules.map(s => s.guru)).size;
+            document.getElementById('statGuru').innerText = uniqueGuru;
+
+            const uniqueKelas = new Set(schedules.map(s => s.kelas)).size;
+            document.getElementById('statKelas').innerText = uniqueKelas;
+
+            const uniqueMapel = new Set(schedules.map(s => s.mapel)).size;
+            document.getElementById('statMapel').innerText = uniqueMapel;
+        }
+
+        // Filter & Pencarian
+        function applyFilters() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const filterHariValue = document.getElementById('filterHari').value;
+            const filterKelasValue = document.getElementById('filterKelas').value;
+
+            const filtered = schedules.filter(item => {
+                const matchesSearch = item.guru.toLowerCase().includes(searchValue) ||
+                                      item.mapel.toLowerCase().includes(searchValue) ||
+                                      item.ruang.toLowerCase().includes(searchValue);
+                
+                const matchesHari = filterHariValue === '' || item.hari === filterHariValue;
+                const matchesKelas = filterKelasValue === '' || item.kelas === filterKelasValue;
+
+                return matchesSearch && matchesHari && matchesKelas;
+            });
+
+            renderTable(filtered);
+        }
+
+        // Reset Filter
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterHari').value = '';
+            document.getElementById('filterKelas').value = '';
+            renderTable(schedules);
+        }
+
+        // Buka Modal Tambah Data
+        function openModal() {
+            document.getElementById('scheduleForm').reset();
+            document.getElementById('editIndex').value = '-1';
+            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-calendar-plus"></i> Tambah Jadwal Mengajar';
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+
+        // Tutup Modal
+        function closeModal() {
+            document.getElementById('modalForm').classList.add('hidden');
+        }
+
+        // Simpan Data (Tambah atau Update)
+        function saveSchedule(e) {
+            e.preventDefault();
+
+            const editIdx = parseInt(document.getElementById('editIndex').value);
+            const newSchedule = {
+                hari: document.getElementById('formHari').value,
+                waktu: document.getElementById('formWaktu').value.trim(),
+                mapel: document.getElementById('formMapel').value.trim(),
+                kelas: document.getElementById('formKelas').value.trim(),
+                ruang: document.getElementById('formRuang').value.trim(),
+                guru: document.getElementById('formGuru').value.trim()
+            };
+
+            if (editIdx >= 0 && editIdx < schedules.length) {
+                // Modifikasi data eksisting
+                schedules[editIdx] = newSchedule;
+                showToast('Jadwal berhasil diperbarui!');
+            } else {
+                // Tambah data baru
+                schedules.push(newSchedule);
+                showToast('Jadwal baru berhasil ditambahkan!');
+            }
+
+            saveToLocalStorage();
+            populateClassFilter();
+            applyFilters();
+            updateStats();
+            closeModal();
+        }
+
+        // Edit Data
+        function editSchedule(index) {
+            const item = schedules[index];
+            if (!item) return;
+
+            document.getElementById('editIndex').value = index;
+            document.getElementById('formHari').value = item.hari;
+            document.getElementById('formWaktu').value = item.waktu;
+            document.getElementById('formMapel').value = item.mapel;
+            document.getElementById('formKelas').value = item.kelas;
+            document.getElementById('formRuang').value = item.ruang;
+            document.getElementById('formGuru').value = item.guru;
+
+            document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Jadwal Mengajar';
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+
+        // Hapus Data
+        function deleteSchedule(index) {
+            if (confirm(`Apakah Anda yakin ingin menghapus jadwal untuk ${schedules[index].mapel} (${schedules[index].guru})?`)) {
+                schedules.splice(index, 1);
+                saveToLocalStorage();
+                populateClassFilter();
+                applyFilters();
+                updateStats();
+                showToast('Jadwal berhasil dihapus!', 'red');
+            }
+        }
+
+        // Show Toast Notification
+        function showToast(message, color = 'green') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+            if (color === 'red') {
+                toastIcon.className = "fa-solid fa-circle-xmark text-red-400 text-lg";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-check text-green-400 text-lg";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Ekspor ke PDF (Menggunakan html2pdf.js)
+        function exportToPDF() {
+            const element = document.getElementById('printArea');
+            const pdfHeader = document.getElementById('pdfHeader');
+            const noPrintElements = document.querySelectorAll('.no-print');
+
+            // Tampilkan Kop Header khusus cetakan PDF
+            pdfHeader.classList.remove('hidden');
+            noPrintElements.forEach(el => el.style.display = 'none');
+
+            const opt = {
+                margin:       [0.4, 0.4, 0.4, 0.4],
+                filename:     `Jadwal_Mengajar_SMKS_YAPIS_MIMIKA_${new Date().toISOString().slice(0,10)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+
+            showToast('Memproses file PDF...');
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Kembalikan Tampilan Normal
+                pdfHeader.classList.add('hidden');
+                noPrintElements.forEach(el => el.style.display = '');
+                showToast('PDF berhasil diunduh!');
+            }).catch(err => {
+                console.error(err);
+                pdfHeader.classList.add('hidden');
+                noPrintElements.forEach(el => el.style.display = '');
+                showToast('Gagal memproses PDF', 'red');
+            });
+        }
+
+        // Ekspor ke Excel (Menggunakan SheetJS / XLSX)
+        function exportToExcel() {
+            if (schedules.length === 0) {
+                showToast('Tidak ada data untuk diekspor', 'red');
+                return;
+            }
+
+            // Format data spreadsheet
+            const excelData = schedules.map((item, index) => ({
+                'No': index + 1,
+                'Hari': item.hari,
+                'Jam Ke / Waktu': item.waktu,
+                'Mata Pelajaran': item.mapel,
+                'Kelas': item.kelas,
+                'Ruang / Lab': item.ruang,
+                'Nama Guru': item.guru
+            }));
+
+            // Buat worksheet dan workbook
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Set Lebar Kolom
+            worksheet['!cols'] = [
+                { wch: 5 },  // No
+                { wch: 10 }, // Hari
+                { wch: 25 }, // Jam/Waktu
+                { wch: 30 }, // Mapel
+                { wch: 15 }, // Kelas
+                { wch: 20 }, // Ruang
+                { wch: 30 }  // Guru
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Jadwal Mengajar");
+
+            // Simpan Berkas XLSX
+            const fileName = `Jadwal_Mengajar_SMKS_YAPIS_MIMIKA_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+
+            showToast('Excel (.xlsx) berhasil diunduh!');
+        }
+    </script>
+</body>
+</html>
